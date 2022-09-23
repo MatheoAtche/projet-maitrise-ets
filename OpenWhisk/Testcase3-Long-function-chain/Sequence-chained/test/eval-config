@@ -1,9 +1,9 @@
 # Conprehension test params
-prewarm=true
+prewarm=false
 containerFactory=kubernetes
-cold_loop=1
-warm_loop=0
-warm_warmup=0
+cold_loop=0
+warm_loop=2
+warm_warmup=3
 concurrent_client=0
 concurrent_loop=0
 concurrent_warmup=0

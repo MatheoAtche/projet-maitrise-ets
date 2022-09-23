@@ -83,7 +83,6 @@ while getopts "r:m:t:w:lWR" OPT; do
             exit
         fi
         # If there's no paused container, the mode should not be supported
-        echo $containerFactory
         if [[ -z `kubectl -n openwhisk get pods -l invoker -o name` && $containerFactory = "kubernetes" ]]; then
             echo "Error: could not find warmed containers"
             exit
@@ -143,14 +142,14 @@ fi
 
 if [[ $PRINTLOG = true && ! -e $LOGFILE ]]; then
     echo logfile:$LOGFILE
-    echo "invokeTime,endTime,latency,OW_Duration" > $LOGFILE
+    echo "invokeTime,endTime,latency" > $LOGFILE
 fi
 
 LATENCYSUM=0
 
 for i in $(seq 1 $TIMES)
 do
-    if [[ $MODE = 'cold' && prewarm = false ]]; then
+    if [[ $MODE = 'cold' && $prewarm = false ]]; then
         if [[ -n `kubectl -n openwhisk get pods -l invoker -o name` ]];then
             killPods
         fi
@@ -166,54 +165,25 @@ do
     echo Measure $MODE start up time: no.$i
     
     invokeTime=`date +%s%3N`
-    OW_Durations[$i]=`wsk -i action invoke $ACTIONNAME -b $PARAMS | tail -n +2 | jq '.end-.start'`
+    ActivationIds[$i]=`wsk -i action invoke $ACTIONNAME -b $PARAMS | tail -n +2 | jq -r '.activationId'`
+    OW_SeqDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.end-.start'`
+    OW_ExecDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.duration'`
     endTime=`date +%s%3N`
-    echo "invokeTime: $invokeTime, endTime: $endTime, OW_Duration: ${OW_Durations[$i]}" 
+    echo "invokeTime:$invokeTime, endTime:$endTime, SeqDuration:${OW_SeqDurations[$i]}, ExecDurations:${OW_ExecDurations[$i]}"
 
     latency=`expr $endTime - $invokeTime`
-    LATENCYSUM=`expr $latency + $LATENCYSUM`
-    # The array starts from array[1], not array[0]!
     LATENCIES[$i]=$latency
 
     if [[ $PRINTLOG = true ]];then
-        echo "$invokeTime,$endTime,$latency,${OW_Durations[$i]}" >> $LOGFILE
+        echo "$invokeTime,$endTime,$latency" >> $LOGFILE
     fi
 done
 
-# Sort the latencies
-for((i=0; i<$TIMES+1; i++)){
-  for((j=i+1; j<$TIMES+1; j++)){
-    if [[ ${LATENCIES[i]} -gt ${LATENCIES[j]} ]]
-    then
-      temp=${LATENCIES[i]}
-      LATENCIES[i]=${LATENCIES[j]}
-      LATENCIES[j]=$temp
-    fi
-  }
-}
-
-echo "------------------ result ---------------------"
-_50platency=${LATENCIES[`echo "$TIMES * 0.5"| bc | awk '{print int($0)}'`]}
-_75platency=${LATENCIES[`echo "$TIMES * 0.75"| bc | awk '{print int($0)}'`]}
-_90platency=${LATENCIES[`echo "$TIMES * 0.90"| bc | awk '{print int($0)}'`]}
-_95platency=${LATENCIES[`echo "$TIMES * 0.95"| bc | awk '{print int($0)}'`]}
-_99platency=${LATENCIES[`echo "$TIMES * 0.99"| bc | awk '{print int($0)}'`]}
-
-echo "Latency (ms):"
-echo -e "Avg\t50%\t75%\t90%\t95%\t99%\t"
-echo -e "`expr $LATENCYSUM / $TIMES`\t$_50platency\t$_75platency\t$_90platency\t$_95platency\t$_99platency\t"
 
 if [ ! -z $RESULT ]; then
-    echo -e "\n\n------------------ (single)result ---------------------\n" >> $RESULT
+    echo -e "\n\n------------------ result ---------------------\n" >> $RESULT
     echo "mode: $MODE, loop_times: $TIMES, warmup_times: $WARMUP" >> $RESULT
-    _50platency=${LATENCIES[`echo "$TIMES * 0.5"| bc | awk '{print int($0)}'`]} 
-    _75platency=${LATENCIES[`echo "$TIMES * 0.75"| bc | awk '{print int($0)}'`]} 
-    _90platency=${LATENCIES[`echo "$TIMES * 0.90"| bc | awk '{print int($0)}'`]} 
-    _95platency=${LATENCIES[`echo "$TIMES * 0.95"| bc | awk '{print int($0)}'`]} 
-    _99platency=${LATENCIES[`echo "$TIMES * 0.99"| bc | awk '{print int($0)}'`]}
-
-    echo "Latency (ms):" >> $RESULT
-    echo -e "Avg\t50%\t75%\t90%\t95%\t99%\t" >> $RESULT
-    echo -e "`expr $LATENCYSUM / $TIMES`\t$_50platency\t$_75platency\t$_90platency\t$_95platency\t$_99platency\t" >> $RESULT
-    echo -e "OW_Durations : ${OW_Durations[*]}" >> $RESULT
+    echo "Latency (ms): ${LATENCIES[*]}" >> $RESULT
+    echo -e "OW_SeqDurations (ms): ${OW_SeqDurations[*]}" >> $RESULT
+    echo -e "OW_ExecDurations (ms): ${OW_ExecDurations[*]}" >> $RESULT
 fi

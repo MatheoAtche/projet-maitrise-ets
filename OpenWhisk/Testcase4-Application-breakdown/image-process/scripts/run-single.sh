@@ -149,14 +149,14 @@ fi
 
 if [[ $PRINTLOG = true && ! -e $LOGFILE ]]; then
     echo logfile:$LOGFILE
-    echo "invokeTime,endTime,latency,OW_Duration" > $LOGFILE
+    echo "invokeTime,endTime,latency" > $LOGFILE
 fi
 
 LATENCYSUM=0
 
 for i in $(seq 1 $TIMES)
 do
-    if [[ $MODE = 'cold' && prewarm = false ]]; then
+    if [[ $MODE = 'cold' && $prewarm = false ]]; then
         if [[ -n `kubectl -n openwhisk get pods -l invoker -o name` ]];then
             killPods
         fi
@@ -174,62 +174,32 @@ do
     #oldIFS="$IFS" 
     invokeTime=`date +%s%3N`
     #IFS=$'\n' 
-    OW_Durations[$i]=$($SCRIPTS_DIR/action_invoke.sh)
+    ActivationIds[$i]=$($SCRIPTS_DIR/action_invoke.sh)
     endTime=`date +%s%3N`
     #IFS="$oldIFS"
-    #OW_Durations[$i]=`tail -n +2 ${output[@]} | jq '.end-.start'`
+    OW_SeqDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.end-.start'`
+    OW_ExecDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.duration'`
+
 
     # check invoke result
     #python3 $SCRIPTS_DIR/checkInvoke.py "${output[@]}"
     if [[ $? -eq 0 ]]; then
-        echo "invokeTime: $invokeTime, endTime: $endTime, OW_Duration: ${OW_Durations[$i]}" 
+        echo "invokeTime:$invokeTime, endTime:$endTime, SeqDuration:${OW_SeqDurations[$i]}, ExecDurations:${OW_ExecDurations[$i]}" 
 
         latency=`expr $endTime - $invokeTime`
-        LATENCYSUM=`expr $latency + $LATENCYSUM`
-        # The array starts from array[1], not array[0]!
         LATENCIES[$i]=$latency
 
         if [[ $PRINTLOG = true ]];then
-            echo "$invokeTime,$endTime,$latency,${OW_Durations[$i]}" >> $LOGFILE
+            echo "$invokeTime,$endTime,$latency" >> $LOGFILE
         fi
     fi
 done
 
-# Sort the latencies
-for((i=0; i<$TIMES+1; i++)){
-  for((j=i+1; j<$TIMES+1; j++)){
-    if [[ ${LATENCIES[i]} -gt ${LATENCIES[j]} ]]
-    then
-      temp=${LATENCIES[i]}
-      LATENCIES[i]=${LATENCIES[j]}
-      LATENCIES[j]=$temp
-    fi
-  }
-}
 
-echo "------------------ result ---------------------"
-_50platency=${LATENCIES[`echo "$TIMES * 0.5"| bc | awk '{print int($0)}'`]}
-_75platency=${LATENCIES[`echo "$TIMES * 0.75"| bc | awk '{print int($0)}'`]}
-_90platency=${LATENCIES[`echo "$TIMES * 0.90"| bc | awk '{print int($0)}'`]}
-_95platency=${LATENCIES[`echo "$TIMES * 0.95"| bc | awk '{print int($0)}'`]}
-_99platency=${LATENCIES[`echo "$TIMES * 0.99"| bc | awk '{print int($0)}'`]}
-
-echo "Successful invocations: ${#LATENCIES[@]} / $TIMES"
-echo "Latency (ms):"
-echo -e "Avg\t50%\t75%\t90%\t95%\t99%\t"
-if [ ${#LATENCIES[@]} -gt 0 ];then
-    echo -e "`expr $LATENCYSUM / ${#LATENCIES[@]}`\t$_50platency\t$_75platency\t$_90platency\t$_95platency\t$_99platency\t"
-fi
-
-# output to result file
 if [ ! -z $RESULT ]; then
-    echo -e "\n\n------------------ (single)result ---------------------" >> $RESULT
+    echo -e "\n\n------------------ result ---------------------\n" >> $RESULT
     echo "mode: $MODE, loop_times: $TIMES, warmup_times: $WARMUP" >> $RESULT
-    echo "Successful invocations: ${#LATENCIES[@]} / $TIMES" >> $RESULT
-    echo "Latency (ms):" >> $RESULT
-    echo -e "Avg\t50%\t75%\t90%\t95%\t99%\t" >> $RESULT
-    if [ ${#LATENCIES[@]} -gt 0 ];then
-        echo -e "`expr $LATENCYSUM / ${#LATENCIES[@]}`\t$_50platency\t$_75platency\t$_90platency\t$_95platency\t$_99platency\t" >> $RESULT
-    fi
-    echo -e "OW_Durations : ${OW_Durations[*]}" >> $RESULT
+    echo "Latency (ms): ${LATENCIES[*]}" >> $RESULT
+    echo -e "OW_SeqDurations (ms): ${OW_SeqDurations[*]}" >> $RESULT
+    echo -e "OW_ExecDurations (ms): ${OW_ExecDurations[*]}" >> $RESULT
 fi

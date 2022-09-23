@@ -398,6 +398,21 @@
             "selected": false,
             "text": "imageProcessSequence",
             "value": "wskowdev.+imageseq"
+          },
+          {
+            "selected": false,
+            "text": "arraySum_chained-prewarm",
+            "value": "wskowdev.+prewarm-nodejs14|wskowdev.+arraysum-chained"
+          },
+          {
+            "selected": false,
+            "text": "arraySumNested-prewarm",
+            "value": "wskowdev.+prewarm-nodejs14|wskowdev.+arraysumnested"
+          },
+          {
+            "selected": false,
+            "text": "imageProcessSequence-prewarm",
+            "value": "wskowdev.+prewarm-java.+|wskowdev.+imageseq"
           }
         ],
         "skipUrlSync": false,

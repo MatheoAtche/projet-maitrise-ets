@@ -81,10 +81,11 @@ def main():
 
 
     outfile = open("result.csv","w")
-    outfile.write("invokeTime,endTime,OW_Duration\n")
+    outfile.write("invokeTime,endTime,activationId,OW_SeqDuration,OwExecDuration\n")
    
     latencies = []
-    OW_Durations = []
+    OW_SeqDurations = []
+    Ow_ExecDurations = []
     minInvokeTime = 0x7fffffffffffffff
     maxEndTime = 0
     for i in range(clientNum):
@@ -92,19 +93,20 @@ def main():
         clientResult = parseResult(results[i])
         # print the result of every loop of the client
         for j in range(len(clientResult)):
-            outfile.write(clientResult[j][0] + ',' + clientResult[j][1] + ',' + clientResult[j][2] + '\n') 
+            outfile.write(clientResult[j][0] + ',' + clientResult[j][1] + ',' + clientResult[j][2] + ',' + clientResult[j][3] + '\n') 
             
             # Collect the latency
             latency = int(clientResult[j][1]) - int(clientResult[j][0])
             latencies.append(latency)
-            OW_Durations.append(int(clientResult[j][2]))
+            OW_SeqDurations.append(int(clientResult[j][2]))
+            Ow_ExecDurations.append(int(clientResult[j][3]))
 
             # Find the first invoked action and the last return one.
             if int(clientResult[j][0]) < minInvokeTime:
                 minInvokeTime = int(clientResult[j][0])
             if int(clientResult[j][1]) > maxEndTime:
                 maxEndTime = int(clientResult[j][1])
-    formatResult(latencies,maxEndTime - minInvokeTime, clientNum, loopTimes, warmupTimes, OW_Durations)
+    formatResult(latencies, OW_SeqDurations, Ow_ExecDurations)
 
 def parseResult(result):
     lines = result.split('\n')
@@ -112,23 +114,13 @@ def parseResult(result):
     for line in lines:
         if line.find("invokeTime") == -1:
             continue
-        parsedTimes = ['','','']
+        parsedTimes = ['','','','']
+        values = line.split(',')
+        i=0
+        for value in values:
+            parsedTimes[i] = value.split(':')[1]
+            i+=1
 
-        i = 0
-        count = 0
-        while count < 3:
-            while i < len(line):
-                if line[i].isdigit() and count < 2:
-                    parsedTimes[count] = line[i:i+13]
-                    i += 13
-                    count += 1
-                    continue
-                if line[i].isdigit() and count == 2:
-                    parsedTimes[count] = line[i:]
-                    count += 1
-                    continue
-                i += 1
-        
         parsedResults.append(parsedTimes)
     return parsedResults
 
@@ -152,37 +144,8 @@ def getargv():
 
     return (int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
 
-def formatResult(latencies,duration,client,loop,warmup,OW_Durations):
-    requestNum = len(latencies)
-    latencies.sort()
-    OW_Durations.sort()
-    duration = float(duration)
-    # calculate the average latency
-    total = 0
-    for latency in latencies:
-        total += latency
-    print("\n")
-    print("------------------ result ---------------------")
-    print("%s / %d requests finished in %.2f seconds" %(requestNum, (loop * client), (duration/1000)))
-    print("latency (ms):\navg\t50%\t75%\t90%\t95%\t99%")
-    if requestNum > 0:
-        averageLatency = float(total) / requestNum
-        _50pcLatency = latencies[int(requestNum * 0.5) - 1]
-        _75pcLatency = latencies[int(requestNum * 0.75) - 1]
-        _90pcLatency = latencies[int(requestNum * 0.9) - 1]
-        _95pcLatency = latencies[int(requestNum * 0.95) - 1]
-        _99pcLatency = latencies[int(requestNum * 0.99) - 1]
-        print("%.2f\t%d\t%d\t%d\t%d\t%d" %(averageLatency,_50pcLatency,_75pcLatency,_90pcLatency,_95pcLatency,_99pcLatency))
-    print("throughput (n/s):\n%.2f" %(requestNum / (duration/1000)))
-    # output result to file
+def formatResult(latencies, OW_SeqDurations,OW_ExecDurations):
     resultfile = open("eval-result.log","a")
-    resultfile.write("\n\n------------------ (concurrent)result ---------------------\n") 
-    resultfile.write("client: %d, loop_times: %d, warmup_times: %d\n" % (client, loop, warmup))
-    resultfile.write("%s / %d requests finished in %.2f seconds\n" %(requestNum, (loop * client), (duration/1000)))
-    resultfile.write("latency (ms):\navg\t50%\t75%\t90%\t95%\t99%\n")
-    if requestNum > 0:
-        resultfile.write("%.2f\t%d\t%d\t%d\t%d\t%d\n" %(averageLatency,_50pcLatency,_75pcLatency,_90pcLatency,_95pcLatency,_99pcLatency))
-    resultfile.write("throughput (n/s):\n%.2f\n" %(requestNum / (duration/1000)))
     resultfile.write("latencies : ")
     s = ""
     for i in latencies[:-1]:
@@ -190,11 +153,18 @@ def formatResult(latencies,duration,client,loop,warmup,OW_Durations):
     s = s + str(latencies[-1])
     resultfile.write(s)
     resultfile.write("\n")
-    resultfile.write("OW_Duration : ")
+    resultfile.write("OW_SeqDuration : ")
     s = ""
-    for i in OW_Durations[:-1]:
+    for i in OW_SeqDurations[:-1]:
         s = s + str(i) + ';'
-    s = s + str(OW_Durations[-1])
+    s = s + str(OW_SeqDurations[-1])
+    resultfile.write(s)
+    resultfile.write("\n")
+    resultfile.write("OW_ExecDuration : ")
+    s = ""
+    for i in OW_ExecDurations[:-1]:
+        s = s + str(i) + ';'
+    s = s + str(OW_ExecDurations[-1])
     resultfile.write(s)
     resultfile.write("\n")
 main()

@@ -17,5 +17,5 @@ fi
 
 ASSETS_DIR="$TESTCASE4_HOME/image-process/assets"
 pushd $ASSETS_DIR >/dev/null 2>&1
-wsk action invoke imageProcessSequence -i -b -p imageName test.jpg | tail -n +2 | jq '.end-.start'
+wsk action invoke imageProcessSequence -i -b -p imageName test.jpg | tail -n +2 | jq -r '.activationId'
 popd >/dev/null 2>&1
