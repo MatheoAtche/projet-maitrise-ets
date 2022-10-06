@@ -1,0 +1,80 @@
+- v0.0.20
+
+- v0.0.21
+
+- v0.0.22
+
+- v0.0.23 - v0.3.12
+
+- v0.0.24 - v0.3.16
+    Using 'AsyncFileAppender' in log configuration.
+    Removed some checkNotNull and Buffered stats will be computed and printed only in TRACE level.
+    Lock will be released immediately if there are no valid activations to process (completion stream and health stream).
+    Code refactor in BaseScheduler.
+
+- v0.0.25 - v0.3.16
+    Using 'ConsoleAppender' in log configuration.
+
+- v0.0.26 - v0.3.16t --- TESTING
+    Using 'ConsoleAppender' in log configuration.
+    Removed health stream. Invokers are added in the system when an activations coming from that invoker is received.
+    Buffered activations are divided per invoker. When a buffer invoker is empty, are *not* checked other invoker's buffers.
+    Lost invoker down aware: if invokers crash, Scheduler send however all activations with that invoker as invoker target.
+    Since buffer are per invoker, there is no need for hashing-algorithm: once an activation are received, an invoker is surely healthy
+    and resources on Controller are released succesfully.
+
+- v0.0.27 - v0.3.17t --- TESTING
+    As v0.0.26 - v0.3.16t.
+    Policy is applied on completions. Policy applied only if needed.
+
+- v0.0.28 - v0.3.18t --- TESTING
+    As v0.0.27 - v0.3.17t.
+    Added cli parameter to specify activations number to buffer on the invoker, even if it is overloaded.
+
+- v0.0.33 - v0.3.19t --- TESTING
+    As 0.0.25 - v0.3.16.
+    Add option 'overloadRatio' to specify to schedule more activations with respect to real invoker userMemory capacity.
+
+- v0.0.34 - v0.4.0
+    As 0.0.25 - v0.3.16.
+    Buffer is sorted only when needed (on completions).
+    Health stream frequency reduced.
+    Added asynchronous producer to send activations to invokers.
+
+- v0.0.36 - v0.4.16
+    As v0.0.34 - v0.4.0.
+    Removed overloadRatio. Added invokerBufferSize. In Invoker class, added buffer and methods to manage queue on invoker. Note that, on Invoker#release is mandatory to check if the activation to remove is in Invoker#buffer or in Invoker#activationContainerMap, due to network delay. 
+    Removed null check in ShortestJobFirst.
+
+- v0.0.37 - v0.4.17
+    As v0.0.36 - v0.4.16.
+    Minor bug fix in ShortestJobFirst Policy.
+
+- v0.0.47 - v0.4.40
+    As v0.0.37 - v0.4.17.
+    Added RunningCompositionPQFIFO policy.
+
+- 0.0.62 - v0.5.18
+    Removed RunningCompositionPQFIFO policy.
+    Added RunningCompositionTracerScheduler as AdvancedScheduler substituing TracerScheduler component.
+
+- 0.0.63 - v0.5.19
+    Activaton's scheduling time duration removed; added insted timestamp of first deserialization (from Kafka)
+      and timestamp just before send it to Kafka. These timestamps are injected into content field of "$scheduler".
+
+- 0.0.65 - v0.5.21
+    Topic "scheduler" created at startup with the same configuration as OpenWhisk.
+    Added log trace to trace buffer ordering time.
+    Fixed scheduler execution time: now start and end time for an activation is traced correctly.
+
+- 0.0.66 - v0.5.22
+    Removed log trace for sort buffer
+    Set some configuration params in kafka producer and consumer
+
+- 0.0.67 - v0.5.23
+    Same as 0.0.66 - v0.5.22
+    Added in Kafka consumer within BufferredScheduler (those to fetch data from "completed" topci) kafka consumer configuration
+
+- 0.0.70 - v0.5.26
+    Same as 0.0.66 - v0.5.23
+    In ShortestJobFirstPolicy, computing metric as duration - initTime, since initTime includes container creation

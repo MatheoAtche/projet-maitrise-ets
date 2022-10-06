@@ -1,0 +1,252 @@
+# Overall configuration of OpenWhisk deployment
+whisk:
+  # Ingress defines how to access OpenWhisk from outside the Kubernetes cluster.
+  # Only a subset of the values are actually used on any specific type of cluster.
+  # See the "Configuring OpenWhisk section" of the docs/k8s-*.md that matches
+  # your cluster type for details on what values to provide and how to get them.
+  ingress:
+    apiHostName: "harrier-1"
+    apiHostPort: 31001
+    apiHostProto: "https"
+    type: NodePort
+    domain: "domain"
+    useInternally: false
+  # Production deployments _MUST_ override these default auth values
+  auth:
+    system: "789c46b1-71f6-4ed5-8c54-816aa4f8c502:abczO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
+    guest: "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
+  systemNameSpace: "/whisk.system"
+  limits:
+    actionsInvokesPerminute: 5000
+    actionsInvokesConcurrent: 1000
+    triggersFiresPerminute: 5000
+    actionsSequenceMaxlength: 110
+    actions:
+      time:
+        min: "100ms"
+        max: "5m"
+        std: "1m"
+      memory:
+        min: "128m"
+        max: "512m"
+        std: "256m"
+      concurrency:
+        min: 1
+        max: 20
+        std: 2
+      log:
+        min: "0m"
+        max: "10m"
+        std: "10m"
+    activation:
+      payload:
+        max: "1048576"
+  loadbalancer:
+    blackboxFraction: "100%"
+    timeoutFactor: 2
+  # Kafka configuration. For all sub-fields a value of "" means use the default from application.conf
+  kafka:
+    replicationFactor: ""
+    topics:
+      cacheInvalidation:
+        segmentBytes: ""
+        retentionBytes: ""
+        retentionMs: ""
+      completed:
+        segmentBytes: ""
+        retentionBytes: ""
+        retentionMs: ""
+      events:
+        segmentBytes: ""
+        retentionBytes: ""
+        retentionMs: ""
+      health:
+        segmentBytes: ""
+        retentionBytes: ""
+        retentionMs: ""
+      invoker:
+        segmentBytes: ""
+        retentionBytes: ""
+        retentionMs: ""
+  containerPool:
+    userMemory: "40000m"
+  runtimes: "runtimes.json"
+  testing:
+    includeTests: true
+    includeSystemTests: false
+  versions:
+    openwhisk:
+      buildDate: "2022-06-23-06:18:00Z"
+      buildNo: "20220623a"
+      gitTag: "c5970a657a3070e9964cb14715b9df31819d3b75"
+    openwhiskCli:
+      tag: "1.1.0"
+    openwhiskCatalog:
+      gitTag: "1.0.0"
+    openwhiskPackageAlarms:
+      gitTag: "2.3.0"
+    openwhiskPackageKafka:
+      gitTag: "2.1.0"
+
+k8s:
+  domain: cluster.local
+  dns: kube-dns.kube-system
+  persistence:
+    enabled: true
+    hasDefaultStorageClass: false
+    explicitStorageClass: "openebs-hostpath"
+
+utility:
+  imageName: "openwhisk/ow-utils"
+  imageTag: "c5970a6"
+
+# Nginx configurations
+nginx:
+  imageName: "nginx"
+  imageTag: "1.21.1"
+  imagePullPolicy: "IfNotPresent"
+  replicaCount: 1
+  restartPolicy: "Always"
+  httpPort: 80
+  httpsPort: 443
+  httpsNodePort: 31001
+  workerProcesses: "auto"
+  certificate:
+    external: false
+    cert_file: ""
+    key_file: ""
+    sslPassword: ""
+
+# Controller configurations
+controller:
+  imageName: "alfredo94/ow-controller"
+  imageTag: "0.0.25"
+  imagePullPolicy: "IfNotPresent"
+  replicaCount: 1
+  restartPolicy: "Always"
+  port: 8080
+  options: ""
+  jvmHeapMB: "1024"
+  jvmOptions: ""
+  loglevel: "INFO"
+  lean: false
+
+# Invoker configurations
+invoker:
+  imageName: "alfredo94/ow-invoker"
+  imageTag: "0.0.38"
+  imagePullPolicy: "IfNotPresent"
+  restartPolicy: "Always"
+  runtimeDeleteTimeout: "30 seconds"
+  port: 8080
+  options: "-Dwhisk.kubernetes.user-pod-node-affinity.enabled=false"
+  jvmHeapMB: "512"
+  jvmOptions: ""
+  loglevel: "INFO"
+  containerFactory:
+    useRunc: false
+    impl: "docker"
+    enableConcurrency: true
+    networkConfig:
+      name: "bridge"
+      dns:
+        inheritInvokerConfig: true
+        overrides:          # NOTE: if inheritInvokerConfig is true, all overrides are ignored
+          # Nameservers, search, and options are space-separated lists
+          # eg nameservers: "1.2.3.4 1.2.3.5 1.2.3.6" is a list of 3 nameservers
+          nameservers: ""
+          search: ""
+          options: ""
+    kubernetes:
+      isolateUserActions: true
+      replicaCount: 1
+
+# Prometheus configuration
+prometheus:
+  imageName: "prom/prometheus"
+  imageTag: v2.35.0
+  imagePullPolicy: "IfNotPresent"
+  replicaCount: 1
+  restartPolicy: "Always"
+  port: 9090
+  persistence:
+    size: 1Gi
+  persistentVolume:
+    mountPath: /prometheus/
+
+user_events:
+  imageName: "openwhisk/user-events"
+  imageTag: "c5970a6"
+
+# Grafana configuration
+grafana:
+  imageName: "grafana/grafana"
+  imageTag: "6.3.0"
+  imagePullPolicy: "IfNotPresent"
+  replicaCount: 1
+  restartPolicy: "Always"
+  port: 3000
+  adminPassword: "admin"
+  dashboards:
+  - https://raw.githubusercontent.com/apache/openwhisk/master/core/monitoring/user-events/compose/grafana/dashboards/openwhisk_events.json
+  - https://raw.githubusercontent.com/apache/openwhisk/master/core/monitoring/user-events/compose/grafana/dashboards/global-metrics.json
+  - https://raw.githubusercontent.com/apache/openwhisk/master/core/monitoring/user-events/compose/grafana/dashboards/top-namespaces.json
+
+# Metrics
+metrics:
+  # set true to enable prometheus exporter
+  prometheusEnabled: true
+  # passing prometheus-enabled by a config file, required by openwhisk
+  whiskconfigFile: "whiskconfig.conf"
+  # set true to enable Kamon
+  kamonEnabled: false
+  # set true to enable Kamon tags
+  kamonTags: false
+  # set true to enable user metrics
+  userMetricsEnabled: true
+
+# Used to define pod affinity and anti-affinity for the Kubernetes scheduler.
+# If affinity.enabled is true, then all of the deployments for the OpenWhisk
+# microservices will use node and pod affinity directives to inform the
+# scheduler how to best distribute the pods on the available nodes in the cluster.
+affinity:
+  enabled: false
+  coreNodeLabel: core
+  edgeNodeLabel: edge
+  invokerNodeLabel: invoker
+  providerNodeLabel: provider
+
+# Used to define toleration for the Kubernetes scheduler.
+# If tolerations.enabled is true, then all of the deployments for the OpenWhisk
+# microservices will add tolerations for key openwhisk-role with specified value and effect NoSchedule.
+toleration:
+  enabled: false
+  coreValue: core
+  edgeValue: edge
+  invokerValue: invoker
+
+# Priority queue scheduler
+scheduler:
+  external: false
+  imageName: "alfredo94/ow-scheduler"
+  imageTag: "0.0.70"
+  imagePullPolicy: "IfNotPresent"
+  replicaCount: 1
+  restartPolicy: "Always"
+  host: null
+  log: "trace"
+  policy: pass_through
+  tracing: false
+  rc_max_cmp: "16"
+  rc_buffer_limit: "1000"
+  buffering: false
+  bufferSize: "1000"
+  invokerBufferLimit: "0"
+  heartbeatPoll: "1000"
+  pollIntervalMs: "50"
+  fetchMinBytes: "1"
+  fetchMaxWaitMs: "500"
+  maxPartitionFetchBytes: "0"
+  port: 8080
+  persistence:
+    size: 128Mi
