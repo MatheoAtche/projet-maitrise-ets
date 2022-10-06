@@ -1,0 +1,3 @@
+[submodule "OpenWhisk/openwhisk"]
+	path = OpenWhisk/openwhisk
+	url = git@github.com:MatheoAtche/openwhisk.git
