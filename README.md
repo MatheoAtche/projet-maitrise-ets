@@ -4,9 +4,11 @@ Projet de maîtrise à l'ÉTS de Montréal. Le projet vise à implanter et teste
 
 ## Structure du dépôt git
 
+> Pour cloner ce projet la première fois il faut utiliser la commande `git clone --recursive` to download the submodules content too. If you already cloned the repo and did'nt use this command you can execute `git submodule update --init --recursive`
+
 3 dossiers sont présents dans ce dépôt.
 
-- [`Openwhisk`](./OpenWhisk/) contient les fonctions déployées sur la plateforme Openwhisk pour effectuer les tests et les scripts pour exécuter ces tests
+- [`Openwhisk`](./OpenWhisk/) contient les fonctions déployées sur la plateforme Openwhisk pour effectuer les tests et les scripts pour exécuter ces tests. Il contient aussi des fichiers Docker pour construire les images utilisées dans le projet. Ainsi qu'un submodule d'Openwhisk comportant des modifications pour un scheduler custom (depuis ce [repo](https://github.com/MatheoAtche/openwhisk/tree/custom-scheduler)).
 - [`faas-profiler`](./faas-profiler/) est un outil permettant de créer des charges de travail pour Openwhisk et d'analyser les performances suite à l'exécution des fonctions. Il a été adapté à partir de [faas-profiler](https://github.com/PrincetonUniversity/faas-profiler) pour fonctionner avec un déploiement d'Openwhisk sur Kubernetes.
 - [`terraform`](./terraform/) contient les fichiers Terraform permettant le déploiement de Jenkins (non utilisé pour le projet), Openwhisk et les outils de monitoring sur la plateforme Kubernetes.
 
