@@ -48,6 +48,7 @@ whisk:
   kafka:
     replicationFactor: ""
     topics:
+      prefix: ""
       cacheInvalidation:
         segmentBytes: ""
         retentionBytes: ""
@@ -72,6 +73,10 @@ whisk:
         segmentBytes: ""
         retentionBytes: ""
         retentionMs: ""
+      creationAck:
+        segmentBytes: ""
+        retentionBytes: ""
+        retentionMs: ""
   containerPool:
     userMemory: "40000m"
   runtimes: "runtimes.json"
@@ -82,9 +87,9 @@ whisk:
     includeSystemTests: false
   versions:
     openwhisk:
-      buildDate: "2022-06-23-06:18:00Z"
-      buildNo: "20220623a"
-      gitTag: "c5970a657a3070e9964cb14715b9df31819d3b75"
+      buildDate: "2022-09-13-02:40:10Z"
+      buildNo: "20220912"
+      gitTag: "a1639f0e4d7270c9a230190ac26acb61413b6bbb"
     openwhiskCli:
       tag: "1.1.0"
     openwhiskCatalog:
@@ -104,7 +109,7 @@ k8s:
 
 utility:
   imageName: "openwhisk/ow-utils"
-  imageTag: "a03507c"
+  imageTag: "a1639f0"
 
 # Nginx configurations
 nginx:
@@ -125,8 +130,8 @@ nginx:
 
 # Controller configurations
 controller:
-  imageName: "hunhoffe/controller"
-  imageTag: "62dee68"
+  imageName: "openwhisk/controller"
+  imageTag: "a1639f0"
   imagePullPolicy: "IfNotPresent"
   replicaCount: 1
   restartPolicy: "Always"
@@ -139,14 +144,16 @@ controller:
 
 # Scheduler configurations
 scheduler:
-  enable: true
-  imageName: "hunhoffe/scheduler"
-  imageTag: "62dee68"
+  enabled: true
+  imageName: "openwhisk/scheduler"
+  imageTag: "a1639f0"
   imagePullPolicy: "IfNotPresent"
   replicaCount: 1
   restartPolicy: "Always"
-  port: 8080
-  rpcPort: 13001
+  endpoints:
+    akkaPort: 25520
+    port: 8080
+    rpcPort: 13001
   options: ""
   jvmHeapMB: "1024"
   jvmOptions: ""
@@ -168,31 +175,22 @@ scheduler:
     gracefulShutdownTimeout: "5 seconds"
     maxRetentionSize: 10000
     maxRetentionMs: 60000
+    maxBlackboxRetentionMs: 300000
     throttlingFraction: 0.9
     durationBufferSize: 10
-
-# etcd (used by scheduler and controller if scheduler is enabled)
-etcd:
-  external: false
-  imageName: "quay.io/coreos/etcd"
-  imageTag: "v3.4.0"
-  imagePullPolicy: "IfNotPresent"
-  # NOTE: setting replicaCount > 1 will not work; need to add etcd cluster configuration
-  replicaCount: 1
-  restartPolicy: "Always"
-  port: 2379
-  lease_timeout: 1
-  pool_threads: 10
-  persistence:
-    size: 256Mi
+  scheduling:
+    staleThreshold: "100ms"
+    checkInterval: "100ms"
+    dropInterval: "10 minutes"
 
 # Invoker configurations
 invoker:
   imageName: "openwhisk/invoker"
-  imageTag: "a03507c"
+  imageTag: "a1639f0"
   imagePullPolicy: "IfNotPresent"
   restartPolicy: "Always"
   runtimeDeleteTimeout: "30 seconds"
+  idleContainerTimeout: "15s"
   port: 8080
   options: "-Dwhisk.kubernetes.user-pod-node-affinity.enabled=false"
   jvmHeapMB: "512"
@@ -219,7 +217,7 @@ invoker:
 # Prometheus configuration
 prometheus:
   imageName: "prom/prometheus"
-  imageTag: v2.35.0
+  imageTag: v2.14.0
   imagePullPolicy: "IfNotPresent"
   replicaCount: 1
   restartPolicy: "Always"
@@ -228,10 +226,6 @@ prometheus:
     size: 1Gi
   persistentVolume:
     mountPath: /prometheus/
-
-user_events:
-  imageName: "openwhisk/user-events"
-  imageTag: "c5970a6"
 
 # Grafana configuration
 grafana:

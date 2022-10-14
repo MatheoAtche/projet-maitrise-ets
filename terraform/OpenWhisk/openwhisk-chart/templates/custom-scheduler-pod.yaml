@@ -1,0 +1,103 @@
+{{ if and (not .Values.customScheduler.external) .Values.customScheduler.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-custom-scheduler
+  labels:
+    name: {{ .Release.Name }}-custom-scheduler
+{{ include "openwhisk.label_boilerplate" . | indent 4 }}
+spec:
+  replicas: {{ .Values.customScheduler.replicaCount }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-custom-scheduler
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-custom-scheduler
+{{ include "openwhisk.label_boilerplate" . | indent 8 }}
+    spec:
+      serviceAccountName: {{ .Release.Name }}-core
+      restartPolicy: {{ .Values.customScheduler.restartPolicy }}
+
+      {{- if .Values.affinity.enabled }}
+      affinity:
+{{ include "openwhisk.affinity.core" . | indent 8 }}
+{{ include "openwhisk.affinity.selfAntiAffinity" ( printf "%s-custom-scheduler" .Release.Name | quote ) | indent 8 }}
+      {{- end }}
+
+      {{- if .Values.toleration.enabled }}
+      tolerations:
+{{ include "openwhisk.toleration.core" . | indent 8 }}
+      {{- end }}
+
+{{- if .Values.k8s.persistence.enabled }}
+      volumes:
+      - name: custom-scheduler-data
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-custom-scheduler-pvc
+{{- end }}
+
+{{- if .Values.k8s.persistence.enabled }}
+      initContainers:
+{{ include "openwhisk.readiness.waitForKafka" . | indent 6 }}
+      - name: scheduler-init
+        image: "{{- .Values.docker.registry.name -}}{{- .Values.busybox.imageName -}}:{{- .Values.busybox.imageTag -}}"
+        command:
+          - chown
+          - -v
+          - -R
+          - 999:999
+          - /data
+        volumeMounts:
+        - mountPath: /data
+          name: custom-scheduler-data
+          readOnly: false
+{{- end }}
+{{ include "openwhisk.docker.imagePullSecrets" . | indent 6 }}
+      containers:
+        - name: scheduler
+          image: "{{- .Values.docker.registry.name -}}{{- .Values.customScheduler.imageName -}}:{{- .Values.customScheduler.imageTag -}}"
+          imagePullPolicy: {{ .Values.customScheduler.imagePullPolicy | quote }}
+{{- if .Values.k8s.persistence.enabled }}
+          volumeMounts:
+          - mountPath: /data
+            name: custom-scheduler-data
+            readOnly: false
+{{- end }}
+          tty: true
+          stdin: true
+          args:
+            - "--log={{ .Values.customScheduler.log }}"
+            - "--policy={{ .Values.customScheduler.policy }}"
+{{- if .Values.customScheduler.tracing }}
+            - "--tracer-scheduler"
+{{- end }}
+{{- if .Values.customScheduler.rc_max_cmp }}
+            - "--rc-max-cmp={{ .Values.customScheduler.rc_max_cmp }}"
+{{- end }}
+{{- if .Values.customScheduler.rc_buffer_limit }}
+            - "--rc-buffer-limit={{ .Values.customScheduler.rc_buffer_limit }}"
+{{- end }}
+{{- if .Values.customScheduler.buffering }}
+            - "--buffered-scheduler"
+            - "--buffer-size={{ .Values.customScheduler.bufferSize }}"
+            - "--invoker-buffer-limit={{ .Values.customScheduler.invokerBufferLimit }}"
+            - "--heartbeat-poll={{ .Values.customScheduler.heartbeatPoll }}"
+{{- end }}
+            - "--kafka-poll-interval={{ .Values.customScheduler.pollIntervalMs }}"
+            - "--kafka-fetch-min-bytes={{ .Values.customScheduler.fetchMinBytes }}"
+            - "--kafka-fetch-max-wait-ms={{ .Values.customScheduler.fetchMaxWaitMs }}"
+            - "--kafka-max-partition-fetch-bytes={{ .Values.customScheduler.maxPartitionFetchBytes }}"
+          ports:
+          - name: scheduler
+            containerPort: {{ .Values.customScheduler.port }}
+          env:
+          # Kafka properties
+          - name: "KAFKA_HOSTS"
+            value: "{{ include "openwhisk.kafka_connect" . }}"
+            
+          # action runtimes
+          - name: "RUNTIMES_MANIFEST"
+            value: {{ template "openwhisk.runtimes_manifest" . }}
+{{ end }}

@@ -45,3 +45,6 @@ target/
 **/dependency-reduced-pom.xml
 
 node_modules/
+
+.metals
+.vscode

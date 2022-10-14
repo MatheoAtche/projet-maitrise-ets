@@ -1,0 +1,15 @@
+{{ if and (not .Values.customScheduler.external) .Values.customScheduler.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-custom-scheduler
+  labels:
+    name: {{ .Release.Name }}-custom-scheduler
+{{ include "openwhisk.label_boilerplate" . | indent 4 }}
+spec:
+  selector:
+    name: {{ .Release.Name }}-custom-scheduler
+  ports:
+    - port: {{ .Values.customScheduler.port }}
+      name: custom-scheduler
+{{ end }}

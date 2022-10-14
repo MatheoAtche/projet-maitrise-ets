@@ -120,6 +120,7 @@ EOF
 	local -r script_basename="$(basename ${BASH_SOURCE})"
 	# directory containing all modules
 	local -r mod="$(dirname ${BASH_SOURCE})"
+	echo "mod: ${mod}"
 	# directory containing core modules
 	local -r core="${mod}/.core"
 	# declare core components

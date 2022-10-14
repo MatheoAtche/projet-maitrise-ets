@@ -37,9 +37,10 @@ In its default configuration, this chart will create the following Kubernetes re
 * Internal Services
    * apigateway, controller, couchdb, kafka, nginx, redis, zookeeper
 * OpenWhisk control plane Pods:
-   * Deployments: apigateway, couchdb, nginx, redis
+   * Deployments: apigateway, couchdb, nginx, redis, alarmprovider
    * StatefulSets: controller, invoker, kafka, zookeeper
 * Persistent Volume Claims
+   * alarmprovider-pvc
    * couchdb-pvc
    * kafka-pvc
    * redis-pvc
@@ -67,11 +68,12 @@ If Container Image Security is enabled, you will not be able to download non-tru
 
 ### Persistent Volume Requirements
 
-This chart requires 5 Persistent Volumes to be created to avoid loss of data.  One of the following must be true to satisfy the Persistent Volume requirements for this chart:
+This chart requires 6 Persistent Volumes to be created to avoid loss of data.  One of the following must be true to satisfy the Persistent Volume requirements for this chart:
 
 * When the chart is deployed, the value `k8s.persistence.enabled` is set to false to disable usage of Persistent Volumes (for development and test activities).
 * The Kubernetes cluster supports Dynamic Volume Provisioning and has a default StorageClass defined with an associated provisioner.
 * The Kubernetes cluster supports Dynamic Volume Provisioning and when the chart is deployed, the value `k8s.persistence.hasDefaultStorageClass` is set to `false` and `k8s.persistence.explicitStorageClass` is set to a StorageClass which has an associated provisioner.
+* The Kubernetes cluster does not support Dynamic Volume Provisioning and a default StorageClass with an associated provisioner is defined. The PersistantVolumes were created statically. Look at the default values for [persistence.size](https://github.com/apache/openwhisk-deploy-kube/blob/master/helm/openwhisk/values.yaml) to avoid PersistantVolumeClaims to be stuck.
 
 ### PodSecurityPolicy Requirements
 

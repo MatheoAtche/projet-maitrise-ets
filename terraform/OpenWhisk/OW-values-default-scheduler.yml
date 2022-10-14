@@ -130,11 +130,8 @@ nginx:
 
 # Controller configurations
 controller:
-  #imageName: "matheoatche/controller"
-  #imageTag: "fa86b6b6"
-  #imageTag: "test"
-  imageName: "alfredo94/ow-controller"
-  imageTag: "0.0.25"
+  imageName: "openwhisk/controller"
+  imageTag: "a1639f0"
   imagePullPolicy: "IfNotPresent"
   replicaCount: 1
   restartPolicy: "Always"
@@ -145,7 +142,7 @@ controller:
   loglevel: "INFO"
   lean: false
 
-# Openwhisk Scheduler configurations
+# Scheduler configurations
 scheduler:
   enabled: false
   imageName: "openwhisk/scheduler"
@@ -188,11 +185,8 @@ scheduler:
 
 # Invoker configurations
 invoker:
-  #imageName: "matheoatche/invoker"
-  #imageTag: "fa86b6b6"
-  #imageTag: "test"
-  imageName: "alfredo94/ow-invoker"
-  imageTag: "0.0.38"
+  imageName: "openwhisk/invoker"
+  imageTag: "a1639f0"
   imagePullPolicy: "IfNotPresent"
   restartPolicy: "Always"
   runtimeDeleteTimeout: "30 seconds"
@@ -204,7 +198,7 @@ invoker:
   loglevel: "INFO"
   containerFactory:
     useRunc: false
-    impl: "docker"
+    impl: "kubernetes"
     enableConcurrency: true
     networkConfig:
       name: "bridge"
@@ -279,32 +273,3 @@ toleration:
   coreValue: core
   edgeValue: edge
   invokerValue: invoker
-
-# Priority queue scheduler
-customScheduler:
-  enabled: true
-  external: false
-  imageName: "matheoatche/ow-scheduler"
-  imageTag: "0.0.70"
-  #imageName: "alfredo94/ow-scheduler"
-  #imageTag: "0.0.70"
-  imagePullPolicy: "IfNotPresent"
-  replicaCount: 1
-  restartPolicy: "Always"
-  host: null
-  log: "trace"
-  policy: pass_through
-  tracing: false
-  rc_max_cmp: "16"
-  rc_buffer_limit: "1000"
-  buffering: false
-  bufferSize: "1000"
-  invokerBufferLimit: "0"
-  heartbeatPoll: "1000"
-  pollIntervalMs: "50"
-  fetchMinBytes: "1"
-  fetchMaxWaitMs: "500"
-  maxPartitionFetchBytes: "0"
-  port: 8080
-  persistence:
-    size: 128Mi

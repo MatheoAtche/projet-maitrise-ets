@@ -11,7 +11,7 @@
 
 
 # Core directory
-export MOD='/Volumes/Data/Projects/FaaS/OpenWhisk/openwhisk-scheduler/script/env'
+export MOD='./env'
 # Supported extension, e.g. MOD_EXT=('sh' 'ksh')
 # Note: extensions can not contains space, e.g. 'g t' is an invalid extension type
 export MOD_EXT=('sh')

@@ -9,7 +9,7 @@ declare -r DOCKER_ROOT="${PROJ_ROOT}/docker"
 declare -r TARGET_ROOT="${PROJ_ROOT}/target"
 declare -r VERSION="$(cat "${DOCKER_ROOT}/__version__" | tr -d " \t\n\r")"
 
-declare -r IMAGE_NAME='ow-scheduler'
+declare -r IMAGE_NAME='matheoatche/ow-scheduler'
 
 
 usage() {
@@ -38,6 +38,9 @@ docker_build() {
 
         # generate docker image
         docker build -t "${IMAGE_NAME}":"${VERSION}" "${DOCKER_ROOT}" || return 1
+
+        # push image to docker hub
+        docker push "${IMAGE_NAME}":"${VERSION}" || return 1
 
         # remove hard links
         rm "${DOCKER_ROOT}/bin/openwhisk-scheduler-"*"jar-with-dependencies.jar"
