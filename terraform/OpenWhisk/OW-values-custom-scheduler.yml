@@ -132,7 +132,6 @@ nginx:
 controller:
   #imageName: "matheoatche/controller"
   #imageTag: "fa86b6b6"
-  #imageTag: "test"
   imageName: "alfredo94/ow-controller"
   imageTag: "0.0.25"
   imagePullPolicy: "IfNotPresent"
@@ -190,7 +189,6 @@ scheduler:
 invoker:
   #imageName: "matheoatche/invoker"
   #imageTag: "fa86b6b6"
-  #imageTag: "test"
   imageName: "alfredo94/ow-invoker"
   imageTag: "0.0.38"
   imagePullPolicy: "IfNotPresent"
@@ -284,10 +282,10 @@ toleration:
 customScheduler:
   enabled: true
   external: false
-  imageName: "matheoatche/ow-scheduler"
-  imageTag: "0.0.70"
-  #imageName: "alfredo94/ow-scheduler"
+  #imageName: "matheoatche/ow-scheduler"
   #imageTag: "0.0.70"
+  imageName: "alfredo94/ow-scheduler"
+  imageTag: "0.0.70"
   imagePullPolicy: "IfNotPresent"
   replicaCount: 1
   restartPolicy: "Always"
