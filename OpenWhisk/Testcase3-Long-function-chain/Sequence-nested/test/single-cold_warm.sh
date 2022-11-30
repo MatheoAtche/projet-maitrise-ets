@@ -166,10 +166,10 @@ do
     
     invokeTime=`date +%s%3N`
     ActivationIds[$i]=`wsk -i action invoke $ACTIONNAME -b $PARAMS | tail -n +2 | jq -r '.activationId'`
-    OW_SeqDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.end-.start'`
-    OW_ExecDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.duration'`
     endTime=`date +%s%3N`
-    echo "invokeTime:$invokeTime, endTime:$endTime, SeqDuration:${OW_SeqDurations[$i]}, ExecDurations:${OW_ExecDurations[$i]}"
+    sleep 5
+    OW_SeqDurations[$i]=`wsk -i activation get ${ActivationIds[$i]} | tail -n +2 | jq '.end-.start'`
+    echo "invokeTime:$invokeTime, endTime:$endTime, SeqDuration:${OW_SeqDurations[$i]}"
 
     latency=`expr $endTime - $invokeTime`
     LATENCIES[$i]=$latency
@@ -185,5 +185,4 @@ if [ ! -z $RESULT ]; then
     echo "mode: $MODE, loop_times: $TIMES, warmup_times: $WARMUP" >> $RESULT
     echo "Latency (ms): ${LATENCIES[*]}" >> $RESULT
     echo -e "OW_SeqDurations (ms): ${OW_SeqDurations[*]}" >> $RESULT
-    echo -e "OW_ExecDurations (ms): ${OW_ExecDurations[*]}" >> $RESULT
 fi

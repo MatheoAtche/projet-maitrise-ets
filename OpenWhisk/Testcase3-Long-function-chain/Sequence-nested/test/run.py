@@ -39,6 +39,8 @@ def main():
     
     actionName = "arraySumNested"
     params = "--param n 20"
+    # actionName = "base64-nodejs"
+    # params = ""
 
     s = os.popen("kubectl -n openwhisk get pods -l invoker -o name")
     if (s.read() != ""):
@@ -84,7 +86,6 @@ def main():
    
     latencies = []
     OW_SeqDurations = []
-    Ow_ExecDurations = []
     minInvokeTime = 0x7fffffffffffffff
     maxEndTime = 0
     for i in range(clientNum):
@@ -92,20 +93,19 @@ def main():
         clientResult = parseResult(results[i])
         # print the result of every loop of the client
         for j in range(len(clientResult)):
-            outfile.write(clientResult[j][0] + ',' + clientResult[j][1] + ',' + clientResult[j][2] + ',' + clientResult[j][3] + '\n') 
+            outfile.write(clientResult[j][0] + ',' + clientResult[j][1] + ',' + clientResult[j][2] + '\n') 
             
             # Collect the latency
             latency = int(clientResult[j][1]) - int(clientResult[j][0])
             latencies.append(latency)
             OW_SeqDurations.append(int(clientResult[j][2]))
-            Ow_ExecDurations.append(int(clientResult[j][3]))
 
             # Find the first invoked action and the last return one.
             if int(clientResult[j][0]) < minInvokeTime:
                 minInvokeTime = int(clientResult[j][0])
             if int(clientResult[j][1]) > maxEndTime:
                 maxEndTime = int(clientResult[j][1])
-    formatResult(latencies, OW_SeqDurations, Ow_ExecDurations)
+    formatResult(latencies, OW_SeqDurations,)
 
 def parseResult(result):
     lines = result.split('\n')
@@ -113,7 +113,7 @@ def parseResult(result):
     for line in lines:
         if line.find("invokeTime") == -1:
             continue
-        parsedTimes = ['','','','']
+        parsedTimes = ['','','']
         values = line.split(',')
         i=0
         for value in values:
@@ -143,7 +143,7 @@ def getargv():
 
     return (int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
 
-def formatResult(latencies, OW_SeqDurations,OW_ExecDurations):
+def formatResult(latencies, OW_SeqDurations):
     resultfile = open("eval-result.log","a")
     resultfile.write("latencies : ")
     s = ""
@@ -157,13 +157,6 @@ def formatResult(latencies, OW_SeqDurations,OW_ExecDurations):
     for i in OW_SeqDurations[:-1]:
         s = s + str(i) + ';'
     s = s + str(OW_SeqDurations[-1])
-    resultfile.write(s)
-    resultfile.write("\n")
-    resultfile.write("OW_ExecDuration : ")
-    s = ""
-    for i in OW_ExecDurations[:-1]:
-        s = s + str(i) + ';'
-    s = s + str(OW_ExecDurations[-1])
     resultfile.write(s)
     resultfile.write("\n")
 main()

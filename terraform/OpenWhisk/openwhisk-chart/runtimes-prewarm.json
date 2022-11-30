@@ -30,10 +30,10 @@
                 },
                 "stemCells": [
                     {
-                        "initialCount": 5,
+                        "initialCount": 1,
                         "memory": "256 MB",
                         "reactive": {
-                            "minCount": 5,
+                            "minCount": 0,
                             "maxCount": 20,
                             "ttl": "5 minutes",
                             "threshold": 1,
@@ -134,10 +134,10 @@
                 "requireMain": true,
                 "stemCells": [
                     {
-                        "initialCount": 5,
+                        "initialCount": 3,
                         "memory": "256 MB",
                         "reactive": {
-                            "minCount": 5,
+                            "minCount": 3,
                             "maxCount": 20,
                             "ttl": "5 minutes",
                             "threshold": 1,
@@ -162,10 +162,10 @@
                 "requireMain": true,
                 "stemCells": [
                     {
-                        "initialCount": 5,
+                        "initialCount": 2,
                         "memory": "256 MB",
                         "reactive": {
-                            "minCount": 5,
+                            "minCount": 2,
                             "maxCount": 20,
                             "ttl": "5 minutes",
                             "threshold": 1,
