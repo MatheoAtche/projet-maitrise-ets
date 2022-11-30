@@ -4,15 +4,13 @@ Projet de maîtrise à l'ÉTS de Montréal. Le projet vise à implanter et teste
 
 ## Structure du dépôt git
 
-> Pour cloner ce projet la première fois il faut utiliser la commande `git clone --recursive` to download the submodules content too. If you already cloned the repo and did'nt use this command you can execute `git submodule update --init --recursive`
+> Pour cloner ce projet la première fois il faut utiliser la commande `git clone --recursive` pour télécharger aussi le contenu des submodules. Si vous avez déjà cloner le repo sans cette commande, vous pouvez utiliser la commande suivante `git submodule update --init --recursive`
 
 3 dossiers sont présents dans ce dépôt.
 
-- [`Openwhisk`](./OpenWhisk/) contient les fonctions déployées sur la plateforme Openwhisk pour effectuer les tests et les scripts pour exécuter ces tests. Il contient aussi des fichiers Docker pour construire les images utilisées dans le projet. Ainsi qu'un submodule d'Openwhisk comportant des modifications pour un scheduler custom (depuis ce [repo](https://github.com/MatheoAtche/openwhisk/tree/custom-scheduler)).
-- [`faas-profiler`](./faas-profiler/) est un outil permettant de créer des charges de travail pour Openwhisk et d'analyser les performances suite à l'exécution des fonctions. Il a été adapté à partir de [faas-profiler](https://github.com/PrincetonUniversity/faas-profiler) pour fonctionner avec un déploiement d'Openwhisk sur Kubernetes.
+- [`Openwhisk`](./OpenWhisk/) contient les fonctions déployées sur la plateforme Openwhisk pour effectuer les tests et les scripts pour exécuter ces tests (Testcase3 et Testcase4). Il contient aussi des fichiers Docker pour construire les images utilisées dans le projet (custom-docker-images). Ainsi qu'un submodule d'Openwhisk comportant des modifications pour un scheduler custom (depuis ce [repo](https://github.com/MatheoAtche/openwhisk/tree/custom-scheduler)) mais qui ne fonctionne pas pour l'instant. Le submodule est accompagné de "openwhisk-scheduler" qui contient le scheduler personnalisé de Alfredo Milani, plus de détails dans le README de ce dossier.
+- [`faas-profiler`](./faas-profiler/) est un outil permettant de créer des charges de travail pour Openwhisk et d'analyser les performances suite à l'exécution des fonctions. Il a été adapté à partir de [faas-profiler](https://github.com/PrincetonUniversity/faas-profiler) pour fonctionner avec un déploiement d'Openwhisk sur Kubernetes. La fonction base64 utilisée pour les tests du projet est issue de ce dossier.
 - [`terraform`](./terraform/) contient les fichiers Terraform permettant le déploiement de Jenkins (non utilisé pour le projet), Openwhisk et les outils de monitoring sur la plateforme Kubernetes.
-
-**TODO** Un README présentant plus d'informations dans [`Openwhisk`](./OpenWhisk/) et [`faas-profiler`](./faas-profiler/).
 
 Le script `deployAllFunctions.sh` permet de déployer toutes les fonctions présentent dans le répertoire et vérifier qu'elles sont bien déployées. Celles des tests du dossier [`Openwhisk`](./OpenWhisk/) et celles incluses avec [`faas-profiler`](./faas-profiler/).
 
@@ -36,16 +34,24 @@ terraform init
 
 Ce ne sera pas nécessaire dans le cas d'un redéploiement pour mettre à jour la configuration par exemple.
 
-Ce déploiement se base sur la Helm chart mise à disposition par le projet Openwhisk. Elle se trouve ici : [openwhisk-deploy-kube](https://github.com/apache/openwhisk-deploy-kube)
+Ce déploiement se base sur la Helm chart mise à disposition par le projet Openwhisk. Elle se trouve ici : [openwhisk-deploy-kube](https://github.com/apache/openwhisk-deploy-kube). Des fichiers y ont été ajoutés pour essayer de déployer le scheduler custom.
 
-Si besoin, mettre à jour la `storageClass` dans le fichier [`OW-values.yml`](./terraform/OpenWhisk/OW-values.yml) à la ligne [97](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/OW-values.yml#L97). Ainsi que le port utilisé à la ligne [9](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/OW-values.yml#L9) et les tokens d'authentification à Openwhisk à la ligne [15](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/OW-values.yml#L15).
+Plusieurs variables permettent de personnaliser le déploiement :
 
-Puis, mettre à jour dans ce même fichier les éléments nécessaires selon la configuration souhaitée.
+| Nom de la variable | Type    | Valeurs possibles          | valeurs par défaut | Description |
+|--------------------|---------|----------------------------|--------------------|-------------|
+| `scheduler`        | Liste   | `default`, `new`, `custom` | `default`          | Permet de choisir le mode d'orchestration d'Openwhisk, `new` correspond au function pull scheduling et `custom` utilise le travail d'Alfredo Milani rappatrié ici mais ne fonctionne pas pour l'instant |
+| `containerFactory` | Liste   | `docker`, `kubernetes`     | `kubernetes`       | Permet de choir si les conteneurs pour exécuter les actions sont créés avec Docker ou Kubernetes |
+| `prewarm`          | Booléen | `true`, `false`            | `false`            | Si la valeur est `true` le déploiement se fera en utilisant `runtimes-prewarm.json`|
 
-- Par exemple l'utilisation de `affinity` et `toleration` à partir de la ligne [212](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/OW-values.yml#L212) pour spécifier sur quels noeuds déployer les différents composants d'Openwhisk.
-- Le choix de la `containerFactory` se fait à la ligne [148](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/OW-values.yml#L148).
-- Pour les `runtimes` il faut mettre à jour le nom du fichier à la ligne [73](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/OW-values.yml#L73), un fichier permettant d'ajouter des conteneurs de `prewarm` est disponible dans le répertoire et se nomme [`runtimes-prewarm.json`](./terraform/OpenWhisk/openwhisk-chart/runtimes-prewarm.json).
-- Et il est aussi possible de configurer le temps de rétention des conteneurs `warm` à la ligne [215](https://github.com/MatheoAtche/projet-maitrise-ets/blob/1acc93ccd26bf8dc6719bfa9e38a08e65d985407/terraform/OpenWhisk/openwhisk-chart/templates/invoker-pod.yaml#L215) du fichier [`invoker-pod.yaml`](./terraform/OpenWhisk/openwhisk-chart/templates/invoker-pod.yaml)
+Un fichier de valeurs est disponible pour chaque scheduler, ils sont nommés avec le schéma suivant : "OW-values-[type de scheduler]-scheduler.yml".
+
+Si besoin, mettre à jour la `storageClass` dans les fichiers de valeurs OW-values. Ainsi que le port utilisé et les tokens d'authentification à Openwhisk.
+
+Puis, mettre à jour dans ces mêmes fichiers les éléments nécessaires selon la configuration souhaitée.
+
+- Par exemple l'utilisation de `affinity` et `toleration` pour spécifier sur quels noeuds déployer les différents composants d'Openwhisk.
+- Et il est aussi possible de configurer le temps de rétention des conteneurs `warm` avec la valeur `invoker.idleContainerTimeout`.
 
 Une fois les configurations souhaitées effectuées, pour installer Openwhisk il suffit d'exécuter la commande suivante :
 
@@ -53,17 +59,9 @@ Une fois les configurations souhaitées effectuées, pour installer Openwhisk il
 terraform apply
 ```
 
+Cette commande exécutera le déploiement avec les valeurs par défaut des variables. Pour changer la valeur des variables, un possibilité est d'ajouter l'élément suivant après `apply` (pour chaque variable à modifier) : `-var="[nom de la variable]=[valeur de la vairable]"`.
+
 Pour redéployer après avoir mis à jour les valeurs de la helm chart, il suffit de réexécuter la même commande. Il est aussi possible d'exécuter `terraform destroy` préalablement pour supprimer Openwhisk et son namespace.
-
-#### Function Pull Scheduling
-
-Un configuration existe aussi pour installer Openwhisk avec le [nouveau scheduler](https://github.com/apache/openwhisk/blob/a1639f0e4d7270c9a230190ac26acb61413b6bbb/proposals/POEM-2-function-pulling-container-scheduler.md). Elle utilise une copie de la Helm Chart en cours de développement dans cette [pull request](https://github.com/apache/openwhisk-deploy-kube/pull/729) au commit [3c8a72e](https://github.com/hunhoffe/openwhisk-deploy-kube/commit/3c8a72e73f724ae941bc33a8ad72797b21725088). Pour déployer Openwhisk avec cette Helm chart contenant le nouveau scheduler il faut utiliser la commande suivante :
-
-```shell
-terraform apply -var="use_new_scheduler=true"
-```
-
-Pour l'instant le nouveau scheduler ne semble pas fonctionner sur Kubernetes, mais si le développement évolue, il suffit de mettre à jour le fichier de [valeurs](./terraform/OpenWhisk/OW-values-new-scheduler.yml) et la Helm chart dans le dossier [`openwhisk-chart-new-scheduler`](./terraform/OpenWhisk/openwhisk-chart-new-scheduler/)
 
 ### Installation de la suite de monitoring
 
